@@ -384,47 +384,53 @@ function renderDay(containerId, key, day) {
       : `col-time text-xs font-medium ${t.text} font-mono ${tm.conflict ? 'text-red-700 font-bold' : ''}`;
 
     html += `
-      <li class="row ${t.bg} ${t.border} ${conflictClass} ${rowFixedClass} border-l-4 px-2 py-1.5 flex items-center gap-1 hover:bg-opacity-70 group"
+      <li class="row ${t.bg} ${t.border} ${conflictClass} ${rowFixedClass} border-l-4 px-2 py-1.5 hover:bg-opacity-70 group"
           data-day="${key}" data-idx="${i}">
-        <span class="drag-handle text-slate-400 group-hover:text-slate-700 px-1 select-none" title="перетащить">≡</span>
-        <span class="col-num">${i + 1}</span>
-        <button onclick="togglePin('${key}', ${i})"
-                title="${pinTitle}"
-                class="pin-btn editor-only ${isFixed ? 'active' : 'inactive'} text-base leading-none">
-          📌
-        </button>
-        <span class="${startTimeClass}">${minToTime(tm.start)}</span>
-        <span class="text-slate-300">→</span>
-        <span class="col-time text-xs ${t.text} font-mono">${minToTime(tm.end)}</span>
-        ${isFixed ? `<span class="fixed-badge" title="Зафиксировано на ${b.fixedStart}">ЗАФИКС</span>` : ''}
-        <input type="number" min="1" max="600" step="5"
-               class="row-input col-dur font-mono text-xs ${t.text}"
-               value="${b.dur}"
-               onchange="updateBlock('${key}', ${i}, 'dur', parseInt(this.value)||1)"
-               title="длительность, мин" />
-        <select class="row-input ${t.chip} text-xs font-medium rounded px-2 py-0.5 cursor-pointer"
-                style="width: 112px;"
-                onchange="updateBlock('${key}', ${i}, 'type', this.value)">
-          ${Object.keys(TYPES).map(tn => `<option value="${tn}" ${tn === b.type ? 'selected' : ''}>${tn}</option>`).join('')}
-        </select>
-        <input class="row-input flex-1 min-w-0 text-sm font-medium ${t.text}"
-               value="${escapeAttr(b.name)}"
-               placeholder="название (пусто = «Слот»)"
-               onchange="updateBlock('${key}', ${i}, 'name', this.value)" />
-        <input class="row-input text-xs text-slate-600 hidden sm:block" style="width: 100px;"
-               value="${escapeAttr(b.speaker || '')}"
-               placeholder="спикер"
-               onchange="updateBlock('${key}', ${i}, 'speaker', this.value)" />
-        <button onclick="insertAfter('${key}', ${i})"
-                title="вставить блок после"
-                class="editor-only opacity-0 group-hover:opacity-100 transition-opacity text-emerald-700 hover:bg-emerald-200 rounded px-1 text-base font-bold">
-          ＋
-        </button>
-        <button onclick="removeBlock('${key}', ${i})"
-                title="удалить блок"
-                class="editor-only opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:bg-red-200 rounded px-1 text-base">
-          ×
-        </button>
+        <div class="flex items-center gap-1">
+          <span class="drag-handle text-slate-400 group-hover:text-slate-700 px-1 select-none" title="перетащить">≡</span>
+          <span class="col-num">${i + 1}</span>
+          <button onclick="togglePin('${key}', ${i})"
+                  title="${pinTitle}"
+                  class="pin-btn editor-only ${isFixed ? 'active' : 'inactive'} text-base leading-none">
+            📌
+          </button>
+          <span class="${startTimeClass}">${minToTime(tm.start)}</span>
+          <span class="text-slate-300">→</span>
+          <span class="col-time text-xs ${t.text} font-mono">${minToTime(tm.end)}</span>
+          ${isFixed ? `<span class="fixed-badge" title="Зафиксировано на ${b.fixedStart}">ЗАФИКС</span>` : ''}
+          <input type="number" min="1" max="600" step="5"
+                 class="row-input col-dur font-mono text-xs ${t.text}"
+                 value="${b.dur}"
+                 onchange="updateBlock('${key}', ${i}, 'dur', parseInt(this.value)||1)"
+                 title="длительность, мин" />
+          <select class="row-input ${t.chip} text-xs font-medium rounded px-2 py-0.5 cursor-pointer"
+                  style="width: 112px;"
+                  onchange="updateBlock('${key}', ${i}, 'type', this.value)">
+            ${Object.keys(TYPES).map(tn => `<option value="${tn}" ${tn === b.type ? 'selected' : ''}>${tn}</option>`).join('')}
+          </select>
+          <input class="row-input flex-1 min-w-0 text-xs text-slate-700"
+                 value="${escapeAttr(b.speaker || '')}"
+                 placeholder="спикер (полное имя)"
+                 onchange="updateBlock('${key}', ${i}, 'speaker', this.value)" />
+          <button onclick="insertAfter('${key}', ${i})"
+                  title="вставить блок после"
+                  class="editor-only opacity-0 group-hover:opacity-100 transition-opacity text-emerald-700 hover:bg-emerald-200 rounded px-1 text-base font-bold shrink-0">
+            ＋
+          </button>
+          <button onclick="removeBlock('${key}', ${i})"
+                  title="удалить блок"
+                  class="editor-only opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:bg-red-200 rounded px-1 text-base shrink-0">
+            ×
+          </button>
+        </div>
+        <div class="flex items-center gap-1 mt-1.5 pl-7">
+          <span class="text-xs text-slate-500 shrink-0">📌 Тема:</span>
+          <input class="row-input flex-1 text-sm font-semibold ${t.text}"
+                 style="min-width: 0; background: rgba(255,255,255,0.65); border: 1px solid rgba(0,0,0,0.05);"
+                 value="${escapeAttr(b.name)}"
+                 placeholder="название темы — пусто = «Слот»"
+                 onchange="updateBlock('${key}', ${i}, 'name', this.value)" />
+        </div>
       </li>
     `;
   });
