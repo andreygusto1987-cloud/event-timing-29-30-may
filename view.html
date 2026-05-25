@@ -157,17 +157,28 @@ function renderDay(containerId, day) {
       html += `<li class="gap-bar">↓ Пустое время ${tm.gap} мин</li>`;
     }
 
+    const noteHtml = b.notes
+      ? `<div class="text-xs text-slate-600 mt-1.5 leading-snug whitespace-pre-line">${escapeAttr(b.notes)}</div>`
+      : '';
     html += `
-      <li class="row ${t.bg} ${t.border} ${conflictClass} ${rowFixedClass} border-l-4 px-2 py-1.5 flex items-center gap-2">
-        <span class="col-num">${i + 1}</span>
-        <span class="${startTimeClass}">${minToTime(tm.start)}</span>
-        <span class="text-slate-300">→</span>
-        <span class="col-time text-xs ${t.text} font-mono">${minToTime(tm.end)}</span>
-        ${isFixed ? `<span class="fixed-badge" title="Зафиксировано на ${b.fixedStart}">ЗАФИКС</span>` : ''}
-        <span class="col-dur font-mono text-xs ${t.text}">${b.dur}м</span>
-        <span class="${t.chip} text-xs font-medium rounded px-2 py-0.5" style="min-width: 80px; text-align: center;">${b.type}</span>
-        <span class="flex-1 min-w-0 text-sm font-medium ${t.text} truncate">${escapeAttr(b.name || '—')}</span>
-        <span class="text-xs text-slate-600 hidden sm:block" style="width: 130px; text-align: right;">${escapeAttr(b.speaker || '')}</span>
+      <li class="row ${t.bg} ${t.border} ${conflictClass} ${rowFixedClass} border-l-4 cursor-pointer select-none" onclick="toggleRow(this)">
+        <div class="px-2 py-1.5 flex items-center gap-2">
+          <span class="col-num">${i + 1}</span>
+          <span class="${startTimeClass}">${minToTime(tm.start)}</span>
+          <span class="text-slate-300">→</span>
+          <span class="col-time text-xs ${t.text} font-mono">${minToTime(tm.end)}</span>
+          ${isFixed ? `<span class="fixed-badge" title="Зафиксировано на ${b.fixedStart}">ЗАФИКС</span>` : ''}
+          <span class="col-dur font-mono text-xs ${t.text}">${b.dur}м</span>
+          <span class="${t.chip} text-xs font-medium rounded px-2 py-0.5" style="min-width: 80px; text-align: center;">${b.type}</span>
+          <span class="row-title flex-1 min-w-0 text-sm font-medium ${t.text} truncate">${escapeAttr(b.name || '—')}</span>
+          <span class="text-xs text-slate-600 hidden sm:block" style="width: 130px; text-align: right;">${escapeAttr(b.speaker || '')}</span>
+          <span class="row-toggle text-xs text-slate-400 ml-1">▾</span>
+        </div>
+        <div class="row-detail hidden px-2 pb-3 pt-1 text-sm ${t.text}">
+          <div class="font-semibold">${escapeAttr(b.name || '—')}</div>
+          ${b.speaker ? `<div class="text-xs text-slate-600 mt-1">Спикер: <span class="font-medium">${escapeAttr(b.speaker)}</span></div>` : ''}
+          ${noteHtml}
+        </div>
       </li>
     `;
   });
@@ -238,6 +249,25 @@ async function fetchState(showToast = false) {
 }
 
 function refreshNow() { fetchState(true); }
+
+// Раскрытие строки по клику — показывает полное название + спикер + заметки
+function toggleRow(el) {
+  const detail = el.querySelector('.row-detail');
+  const title = el.querySelector('.row-title');
+  const toggle = el.querySelector('.row-toggle');
+  if (!detail) return;
+  const isOpen = !detail.classList.contains('hidden');
+  if (isOpen) {
+    detail.classList.add('hidden');
+    title.classList.add('truncate');
+    if (toggle) toggle.textContent = '▾';
+  } else {
+    detail.classList.remove('hidden');
+    title.classList.remove('truncate');
+    if (toggle) toggle.textContent = '▴';
+  }
+}
+window.toggleRow = toggleRow;
 
 fetchState();
 setInterval(fetchState, 30000);
