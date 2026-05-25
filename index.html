@@ -86,7 +86,9 @@
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
     <div>
       <h1 class="text-xl font-bold">Тайминг 29–30 мая</h1>
-      <p class="text-xs text-slate-500">Автосохранение · перетаскивай за <span class="font-bold">≡</span> · клик 📌 — фиксация слота на времени</p>
+      <p class="text-xs text-slate-500">
+        Автопубликация для всех зрителей · <span id="publish-status" class="editor-only">✅ опубликовано</span>
+      </p>
     </div>
     <div class="flex items-center gap-2 text-sm flex-wrap no-print">
       <button onclick="resetToDefault()" class="editor-only px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">↩ Сбросить</button>
@@ -200,6 +202,9 @@ const DEFAULT_DATA = {
 };
 
 const STORAGE_KEY = "event-timing-29-30-may-v2";
+const BLOB_ID = "019e5db4-e95d-77ff-8629-e0b03184fe65";
+const BLOB_URL = `https://jsonblob.com/api/jsonBlob/${BLOB_ID}`;
+let PUBLISH_TIMER = null;
 
 // ───── Режим: viewonly если в hash есть #view=<base64> ─────
 let VIEW_MODE = false;
@@ -224,6 +229,10 @@ if (hashState) {
   document.getElementById("view-banner").classList.remove("hidden");
 } else {
   state = loadState();
+  // если localStorage пустой — попробуем подтянуть последнюю версию из общего блоба
+  if (!localStorage.getItem(STORAGE_KEY)) {
+    fetchFromBlob();
+  }
 }
 
 function loadState() {
@@ -233,21 +242,54 @@ function loadState() {
   } catch (e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
+
+async function fetchFromBlob() {
+  try {
+    const res = await fetch(BLOB_URL, { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data && data.day29 && data.day30) {
+      state = data;
+      render();
+    }
+  } catch (e) {}
+}
 function saveState() {
   if (VIEW_MODE) return; // в режиме просмотра не сохраняем — не затираем свою версию
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  // Дебоунс публикация в общий блоб (через 1.5 сек после последнего изменения)
+  if (PUBLISH_TIMER) clearTimeout(PUBLISH_TIMER);
+  PUBLISH_TIMER = setTimeout(publishToBlob, 1500);
+}
+
+async function publishToBlob() {
+  try {
+    const indicator = document.getElementById("publish-status");
+    if (indicator) indicator.textContent = "⏳ публикую…";
+    const res = await fetch(BLOB_URL, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    if (indicator) {
+      const t = new Date().toLocaleTimeString("ru-RU").slice(0, 5);
+      indicator.innerHTML = `✅ опубликовано <span class="text-slate-400">${t}</span>`;
+    }
+  } catch (e) {
+    const indicator = document.getElementById("publish-status");
+    if (indicator) indicator.textContent = "🔴 ошибка публикации: " + e.message;
+  }
 }
 
 function shareReadonly() {
-  const json = JSON.stringify(state);
-  const b64 = btoa(unescape(encodeURIComponent(json)));
-  const url = `${location.origin}${location.pathname}#view=${b64}`;
-  if (url.length > 8000) {
-    alert("Слишком длинный URL для share-ссылки. Сократи количество слотов или передай файл JSON.");
-    return;
-  }
+  // Стабильная ссылка на view.html — зрители всегда увидят последнюю версию.
+  const base = location.origin + location.pathname.replace(/index\.html$/, "").replace(/\/?$/, "/");
+  const url = base + "view.html";
+  // Принудительно опубликуем текущее состояние перед копированием ссылки
+  publishToBlob();
   navigator.clipboard.writeText(url).then(() => {
-    toast("🔗 Ссылка просмотра скопирована (" + url.length + " символов)");
+    toast("🔗 Ссылка для просмотра скопирована");
   }).catch(() => {
     prompt("Скопируй ссылку:", url);
   });
