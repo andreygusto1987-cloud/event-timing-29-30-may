@@ -50,6 +50,25 @@
 
   .conflict { box-shadow: inset 0 0 0 2px #dc2626; }
   .gap-bar { font-size: 0.7rem; color: #6b7280; padding: 2px 8px; background: #f1f5f9; border-left: 4px dashed #cbd5e1; }
+
+  /* ───── Режим просмотра (для зрителей по shared-ссылке) ───── */
+  body.viewonly .editor-only { display: none !important; }
+  body.viewonly .row-input { pointer-events: none; }
+  body.viewonly select.row-input { background-image: none; }
+  body.viewonly .row-input:hover { background: transparent; }
+  body.viewonly .row-input:focus { background: transparent; box-shadow: none; }
+  body.viewonly .drag-handle { display: none; }
+
+  .view-banner {
+    background: linear-gradient(90deg, #fef3c7, #fde68a);
+    border-bottom: 1px solid #fbbf24;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: #78350f;
+    text-align: center;
+    font-weight: 500;
+  }
+
   @media print {
     .no-print { display: none !important; }
     .row > * { background: transparent !important; }
@@ -58,6 +77,11 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-900">
 
+<div id="view-banner" class="view-banner hidden no-print">
+  👁 Режим просмотра — это снимок расписания. Редактирование отключено.
+  <a href="#" onclick="exitViewMode(event)" class="underline ml-2">Открыть мою версию (без снимка)</a>
+</div>
+
 <header class="bg-white border-b sticky top-0 z-10 shadow-sm">
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
     <div>
@@ -65,13 +89,14 @@
       <p class="text-xs text-slate-500">Автосохранение · перетаскивай за <span class="font-bold">≡</span> · клик 📌 — фиксация слота на времени</p>
     </div>
     <div class="flex items-center gap-2 text-sm flex-wrap no-print">
-      <button onclick="resetToDefault()" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">↩ Сбросить</button>
-      <button onclick="exportJSON()" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">⬇ JSON</button>
-      <label class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
+      <button onclick="resetToDefault()" class="editor-only px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">↩ Сбросить</button>
+      <button onclick="exportJSON()" class="editor-only px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">⬇ JSON</button>
+      <label class="editor-only px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
         ⬆ Загрузить
         <input type="file" accept="application/json" onchange="importJSON(event)" class="hidden" />
       </label>
       <button onclick="copyMarkdown()" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">📋 Markdown</button>
+      <button onclick="shareReadonly()" class="editor-only px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium">🔗 Поделиться для просмотра</button>
       <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">🖨 Печать</button>
     </div>
   </div>
@@ -175,7 +200,31 @@ const DEFAULT_DATA = {
 };
 
 const STORAGE_KEY = "event-timing-29-30-may-v2";
-let state = loadState();
+
+// ───── Режим: viewonly если в hash есть #view=<base64> ─────
+let VIEW_MODE = false;
+function loadFromHash() {
+  const h = location.hash || "";
+  const m = h.match(/^#view=(.+)$/);
+  if (!m) return null;
+  try {
+    const json = decodeURIComponent(escape(atob(m[1])));
+    const data = JSON.parse(json);
+    if (data.day29 && data.day30) return data;
+  } catch (e) {}
+  return null;
+}
+
+let state;
+const hashState = loadFromHash();
+if (hashState) {
+  state = hashState;
+  VIEW_MODE = true;
+  document.body.classList.add("viewonly");
+  document.getElementById("view-banner").classList.remove("hidden");
+} else {
+  state = loadState();
+}
 
 function loadState() {
   try {
@@ -184,7 +233,30 @@ function loadState() {
   } catch (e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
-function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function saveState() {
+  if (VIEW_MODE) return; // в режиме просмотра не сохраняем — не затираем свою версию
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function shareReadonly() {
+  const json = JSON.stringify(state);
+  const b64 = btoa(unescape(encodeURIComponent(json)));
+  const url = `${location.origin}${location.pathname}#view=${b64}`;
+  if (url.length > 8000) {
+    alert("Слишком длинный URL для share-ссылки. Сократи количество слотов или передай файл JSON.");
+    return;
+  }
+  navigator.clipboard.writeText(url).then(() => {
+    toast("🔗 Ссылка просмотра скопирована (" + url.length + " символов)");
+  }).catch(() => {
+    prompt("Скопируй ссылку:", url);
+  });
+}
+
+function exitViewMode(e) {
+  if (e) e.preventDefault();
+  location.href = location.origin + location.pathname;
+}
 
 function timeToMin(t) {
   const [h, m] = t.split(":").map(Number);
@@ -272,7 +344,7 @@ function renderDay(containerId, key, day) {
         <span class="col-num">${i + 1}</span>
         <button onclick="togglePin('${key}', ${i})"
                 title="${pinTitle}"
-                class="pin-btn ${isFixed ? 'active' : 'inactive'} text-base leading-none">
+                class="pin-btn editor-only ${isFixed ? 'active' : 'inactive'} text-base leading-none">
           📌
         </button>
         <span class="${startTimeClass}">${minToTime(tm.start)}</span>
@@ -299,12 +371,12 @@ function renderDay(containerId, key, day) {
                onchange="updateBlock('${key}', ${i}, 'speaker', this.value)" />
         <button onclick="insertAfter('${key}', ${i})"
                 title="вставить блок после"
-                class="opacity-0 group-hover:opacity-100 transition-opacity text-emerald-700 hover:bg-emerald-200 rounded px-1 text-base font-bold">
+                class="editor-only opacity-0 group-hover:opacity-100 transition-opacity text-emerald-700 hover:bg-emerald-200 rounded px-1 text-base font-bold">
           ＋
         </button>
         <button onclick="removeBlock('${key}', ${i})"
                 title="удалить блок"
-                class="opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:bg-red-200 rounded px-1 text-base">
+                class="editor-only opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:bg-red-200 rounded px-1 text-base">
           ×
         </button>
       </li>
@@ -326,7 +398,7 @@ function renderDay(containerId, key, day) {
   html += `
     <div class="px-4 py-3 border-t flex items-center justify-between text-sm bg-slate-50">
       <button onclick="insertAfter('${key}', ${day.blocks.length - 1})"
-              class="px-3 py-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-medium">
+              class="editor-only px-3 py-1.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-medium">
         ＋ Добавить блок в конец
       </button>
       <div class="text-right">
