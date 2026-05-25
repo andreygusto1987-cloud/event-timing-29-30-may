@@ -467,15 +467,30 @@ function renderDay(containerId, key, day) {
     animation: 160,
     ghostClass: "ghost",
     filter: ".gap-bar",
-    onEnd() {
-      const list = document.getElementById(`${key}-list`);
-      const rows = Array.from(list.children).filter(el => el.classList.contains("row"));
-      const newOrder = rows.map(el => parseInt(el.dataset.idx, 10));
-      const blocks = state[key].blocks;
-      state[key].blocks = newOrder.map(i => blocks[i]);
-      render();
-    },
+    group: "days",            // общий — позволяет таскать между day29 и day30
+    onEnd: rebuildFromDOM,    // одна функция для внутри-дневной и межднодневной перестановки
+    onAdd: rebuildFromDOM,    // на случай если onEnd сработал только на источнике
   });
+}
+
+// Перестраивает blocks обоих дней по текущему DOM-порядку (учитывает перенос между списками)
+function rebuildFromDOM() {
+  const collected = { day29: [], day30: [] };
+  ["day29", "day30"].forEach(key => {
+    const list = document.getElementById(`${key}-list`);
+    if (!list) return;
+    Array.from(list.children)
+      .filter(el => el.classList.contains("row"))
+      .forEach(el => {
+        const srcDay = el.dataset.day;
+        const srcIdx = parseInt(el.dataset.idx, 10);
+        const block = state[srcDay] && state[srcDay].blocks[srcIdx];
+        if (block) collected[key].push(block);
+      });
+  });
+  state.day29.blocks = collected.day29;
+  state.day30.blocks = collected.day30;
+  render();
 }
 
 function updateBlock(dayKey, idx, field, value) { state[dayKey].blocks[idx][field] = value; render(); }
