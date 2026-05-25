@@ -228,11 +228,9 @@ if (hashState) {
   document.body.classList.add("viewonly");
   document.getElementById("view-banner").classList.remove("hidden");
 } else {
+  // Источник истины — общий блоб. localStorage — только кеш для офлайн-фоллбэка.
   state = loadState();
-  // если localStorage пустой — попробуем подтянуть последнюю версию из общего блоба
-  if (!localStorage.getItem(STORAGE_KEY)) {
-    fetchFromBlob();
-  }
+  fetchFromBlob();
 }
 
 function loadState() {
@@ -249,8 +247,14 @@ async function fetchFromBlob() {
     if (!res.ok) return;
     const data = await res.json();
     if (data && data.day29 && data.day30) {
-      state = data;
-      render();
+      const remoteJson = JSON.stringify(data);
+      const localJson = JSON.stringify(state);
+      if (remoteJson !== localJson) {
+        state = data;
+        localStorage.setItem(STORAGE_KEY, remoteJson); // сразу обновим кеш
+        render();
+        toast("🔄 Подтянуты изменения с сервера");
+      }
     }
   } catch (e) {}
 }
