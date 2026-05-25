@@ -18,8 +18,36 @@
   .col-dur    { width: 64px; text-align: center; }
   .col-num    { width: 32px; text-align: center; color: #94a3b8; font-size: 0.75rem; }
   select.row-input { padding-right: 22px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%); background-position: calc(100% - 12px) 50%, calc(100% - 7px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
-  .pin-btn { width: 22px; text-align: center; }
-  .pin-btn.active { color: #dc2626; }
+  .pin-btn { width: 26px; height: 26px; text-align: center; border-radius: 6px; transition: all 0.15s; display: inline-flex; align-items: center; justify-content: center; }
+  .pin-btn.active { color: #fff; background: #dc2626; box-shadow: 0 1px 4px rgba(220, 38, 38, 0.45); }
+  .pin-btn.active:hover { background: #b91c1c; }
+  .pin-btn.inactive { color: #cbd5e1; }
+  .pin-btn.inactive:hover { color: #475569; background: #e2e8f0; }
+
+  .row-fixed {
+    border-left-width: 8px !important;
+    border-left-color: #dc2626 !important;
+    background-image: linear-gradient(90deg, rgba(220, 38, 38, 0.06), transparent 200px);
+  }
+  .time-fixed {
+    background: #fee2e2;
+    color: #991b1b !important;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-weight: 700;
+    box-shadow: inset 0 0 0 1px #dc2626;
+  }
+  .fixed-badge {
+    background: #dc2626;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+
   .conflict { box-shadow: inset 0 0 0 2px #dc2626; }
   .gap-bar { font-size: 0.7rem; color: #6b7280; padding: 2px 8px; background: #f1f5f9; border-left: 4px dashed #cbd5e1; }
   @media print {
@@ -54,11 +82,28 @@
   <section id="day-30" class="bg-white rounded-xl shadow border"></section>
 </main>
 
-<footer class="max-w-7xl mx-auto px-4 py-6 text-xs text-slate-500 no-print">
-  <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
-    <span><span class="text-red-600">📌</span> — слот зафиксирован на времени (не сдвигается)</span>
-    <span><span class="text-slate-400">📌</span> — слот не зафиксирован</span>
-    <span>Конфликт — если контент перед фикс-слотом не помещается</span>
+<footer class="max-w-7xl mx-auto px-4 py-6 text-xs text-slate-500 no-print space-y-2">
+  <div class="font-semibold text-slate-700">Как отличить закреплённый слот от обычного:</div>
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-2">
+    <span class="inline-flex items-center gap-2">
+      <span class="pin-btn active text-sm">📌</span>
+      <span>красная кнопка</span>
+    </span>
+    <span class="inline-flex items-center gap-2">
+      <span class="time-fixed text-xs font-mono">14:00</span>
+      <span>время в красной обводке</span>
+    </span>
+    <span class="inline-flex items-center gap-2">
+      <span class="fixed-badge">ЗАФИКС</span>
+      <span>бейдж справа от времени</span>
+    </span>
+    <span class="inline-flex items-center gap-2">
+      <span class="inline-block w-3 h-5 bg-red-600 rounded"></span>
+      <span>толстая красная полоса слева строки</span>
+    </span>
+  </div>
+  <div class="text-slate-500 pt-1">
+    <span class="text-red-600 font-semibold">Конфликт</span> — рамка красная и время красное: контент перед фикс-слотом не помещается, сократи длительности.
   </div>
 </footer>
 
@@ -195,8 +240,8 @@ function renderDay(containerId, key, day) {
         </div>
       </div>
       <div class="text-right">
-        <div class="text-xs text-slate-500">блоков</div>
-        <div class="text-lg font-bold">${day.blocks.length}</div>
+        <div class="text-xs text-slate-500">блоков · закреплено</div>
+        <div class="text-lg font-bold">${day.blocks.length} · <span class="text-red-600">${day.blocks.filter(b => b.fixedStart).length} 📌</span></div>
       </div>
     </div>
     <ul class="divide-y" id="${key}-list">
@@ -213,19 +258,25 @@ function renderDay(containerId, key, day) {
       html += `<li class="gap-bar">↓ Пустое время ${tm.gap} мин (можно заполнить добавлением блока)</li>`;
     }
 
+    const rowFixedClass = isFixed ? "row-fixed" : "";
+    const startTimeClass = isFixed
+      ? "col-time text-xs font-mono time-fixed"
+      : `col-time text-xs font-medium ${t.text} font-mono ${tm.conflict ? 'text-red-700 font-bold' : ''}`;
+
     html += `
-      <li class="row ${t.bg} ${t.border} ${conflictClass} border-l-4 px-2 py-1.5 flex items-center gap-1 hover:bg-opacity-70 group"
+      <li class="row ${t.bg} ${t.border} ${conflictClass} ${rowFixedClass} border-l-4 px-2 py-1.5 flex items-center gap-1 hover:bg-opacity-70 group"
           data-day="${key}" data-idx="${i}">
         <span class="drag-handle text-slate-400 group-hover:text-slate-700 px-1 select-none" title="перетащить">≡</span>
         <span class="col-num">${i + 1}</span>
         <button onclick="togglePin('${key}', ${i})"
                 title="${pinTitle}"
-                class="pin-btn ${isFixed ? 'active' : 'text-slate-300 hover:text-slate-700'} text-base leading-none">
+                class="pin-btn ${isFixed ? 'active' : 'inactive'} text-base leading-none">
           📌
         </button>
-        <span class="col-time text-xs font-medium ${t.text} font-mono ${tm.conflict ? 'text-red-700 font-bold' : ''}">${minToTime(tm.start)}</span>
+        <span class="${startTimeClass}">${minToTime(tm.start)}</span>
         <span class="text-slate-300">→</span>
         <span class="col-time text-xs ${t.text} font-mono">${minToTime(tm.end)}</span>
+        ${isFixed ? `<span class="fixed-badge" title="Зафиксировано на ${b.fixedStart}">ЗАФИКС</span>` : ''}
         <input type="number" min="1" max="600" step="5"
                class="row-input col-dur font-mono text-xs ${t.text}"
                value="${b.dur}"
