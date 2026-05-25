@@ -14,10 +14,14 @@
   .row-input { background: transparent; outline: none; border: none; width: 100%; padding: 4px 6px; border-radius: 4px; }
   .row-input:hover { background: rgba(0,0,0,0.04); }
   .row-input:focus { background: rgba(255,255,255,0.95); box-shadow: 0 0 0 2px #3b82f6; }
-  .col-time   { width: 70px; text-align: center; font-variant-numeric: tabular-nums; }
-  .col-dur    { width: 70px; text-align: center; }
-  .col-num    { width: 36px; text-align: center; color: #94a3b8; font-size: 0.75rem; }
+  .col-time   { width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+  .col-dur    { width: 64px; text-align: center; }
+  .col-num    { width: 32px; text-align: center; color: #94a3b8; font-size: 0.75rem; }
   select.row-input { padding-right: 22px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%); background-position: calc(100% - 12px) 50%, calc(100% - 7px) 50%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; }
+  .pin-btn { width: 22px; text-align: center; }
+  .pin-btn.active { color: #dc2626; }
+  .conflict { box-shadow: inset 0 0 0 2px #dc2626; }
+  .gap-bar { font-size: 0.7rem; color: #6b7280; padding: 2px 8px; background: #f1f5f9; border-left: 4px dashed #cbd5e1; }
   @media print {
     .no-print { display: none !important; }
     .row > * { background: transparent !important; }
@@ -30,13 +34,13 @@
   <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-2 flex-wrap">
     <div>
       <h1 class="text-xl font-bold">Тайминг 29–30 мая</h1>
-      <p class="text-xs text-slate-500">Автосохранение в браузере · перетаскивай за <span class="font-bold">≡</span> · клик по любому полю — редактирование</p>
+      <p class="text-xs text-slate-500">Автосохранение · перетаскивай за <span class="font-bold">≡</span> · клик 📌 — фиксация слота на времени</p>
     </div>
     <div class="flex items-center gap-2 text-sm flex-wrap no-print">
       <button onclick="resetToDefault()" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">↩ Сбросить</button>
       <button onclick="exportJSON()" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">⬇ JSON</button>
       <label class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 cursor-pointer">
-        ⬆ Загрузить JSON
+        ⬆ Загрузить
         <input type="file" accept="application/json" onchange="importJSON(event)" class="hidden" />
       </label>
       <button onclick="copyMarkdown()" class="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300">📋 Markdown</button>
@@ -51,55 +55,49 @@
 </main>
 
 <footer class="max-w-7xl mx-auto px-4 py-6 text-xs text-slate-500 no-print">
-  Все изменения сохраняются автоматически в этом браузере. Чтобы перенести на другое устройство — экспортируй JSON.
+  <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
+    <span><span class="text-red-600">📌</span> — слот зафиксирован на времени (не сдвигается)</span>
+    <span><span class="text-slate-400">📌</span> — слот не зафиксирован</span>
+    <span>Конфликт — если контент перед фикс-слотом не помещается</span>
+  </div>
 </footer>
 
-<!-- Toast -->
 <div id="toast" class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-opacity pointer-events-none text-sm"></div>
 
 <script>
-// ────────────────────────────────────────────────────────────────────────
-// Конфигурация: типы блоков и их цвета
-// ────────────────────────────────────────────────────────────────────────
 const TYPES = {
-  "Брифинг":    { bg: "bg-blue-100",    border: "border-blue-300",   text: "text-blue-900",    chip: "bg-blue-200 text-blue-900" },
-  "Контент":    { bg: "bg-white",       border: "border-slate-200",  text: "text-slate-900",   chip: "bg-slate-200 text-slate-700" },
-  "Признание":  { bg: "bg-amber-100",   border: "border-amber-300",  text: "text-amber-900",   chip: "bg-amber-200 text-amber-900" },
-  "Кофе-брейк": { bg: "bg-orange-100",  border: "border-orange-300", text: "text-orange-900",  chip: "bg-orange-200 text-orange-900" },
-  "Обед":       { bg: "bg-rose-100",    border: "border-rose-300",   text: "text-rose-900",    chip: "bg-rose-200 text-rose-900" },
-  "Буфер":      { bg: "bg-slate-100",   border: "border-slate-300",  text: "text-slate-600",   chip: "bg-slate-300 text-slate-700" },
-  "Закрытие":   { bg: "bg-emerald-100", border: "border-emerald-300",text: "text-emerald-900", chip: "bg-emerald-200 text-emerald-900" },
+  "Открытие":   { bg: "bg-violet-100",  border: "border-violet-300",  text: "text-violet-900",   chip: "bg-violet-200 text-violet-900" },
+  "Брифинг":    { bg: "bg-blue-100",    border: "border-blue-300",    text: "text-blue-900",     chip: "bg-blue-200 text-blue-900" },
+  "Контент":    { bg: "bg-white",       border: "border-slate-200",   text: "text-slate-900",    chip: "bg-slate-200 text-slate-700" },
+  "Признание":  { bg: "bg-amber-100",   border: "border-amber-300",   text: "text-amber-900",    chip: "bg-amber-200 text-amber-900" },
+  "Кофе-брейк": { bg: "bg-orange-100",  border: "border-orange-300",  text: "text-orange-900",   chip: "bg-orange-200 text-orange-900" },
+  "Обед":       { bg: "bg-rose-100",    border: "border-rose-300",    text: "text-rose-900",     chip: "bg-rose-200 text-rose-900" },
+  "Буфер":      { bg: "bg-slate-100",   border: "border-slate-300",   text: "text-slate-600",    chip: "bg-slate-300 text-slate-700" },
+  "Закрытие":   { bg: "bg-emerald-100", border: "border-emerald-300", text: "text-emerald-900",  chip: "bg-emerald-200 text-emerald-900" },
 };
 
-// ────────────────────────────────────────────────────────────────────────
-// Начальные данные (восстанавливаются кнопкой ↩ Сбросить)
-// ────────────────────────────────────────────────────────────────────────
 const DEFAULT_DATA = {
   day29: {
     title: "29 мая (четверг) · 10:00–18:00",
     start: "10:00",
     blocks: [
+      { dur: 40, type: "Открытие",   name: "Открытие", speaker: "", notes: "" },
       { dur: 40, type: "Брифинг",    name: "Брифинг с руководством", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 1", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 2", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 3", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 20, type: "Кофе-брейк", name: "Кофе-брейк № 1", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 4", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 5", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 15, type: "Признание",  name: "Признание № 1", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 6", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 7", speaker: "", notes: "" },
-      { dur: 25, type: "Буфер",      name: "Буфер / переход к обеду", speaker: "", notes: "" },
-      { dur: 60, type: "Обед",       name: "Обед", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 8", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 9", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 10", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 5,  type: "Буфер",      name: "Подход к обеду", speaker: "", notes: "" },
+      { dur: 60, type: "Обед",       name: "Обед", speaker: "", notes: "", fixedStart: "14:00" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 20, type: "Кофе-брейк", name: "Кофе-брейк № 2", speaker: "", notes: "" },
       { dur: 15, type: "Признание",  name: "Признание № 2", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 11", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 12", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 15, type: "Признание",  name: "Признание № 3", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 13", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 10, type: "Закрытие",   name: "Закрытие дня 1", speaker: "", notes: "" },
     ],
   },
@@ -107,37 +105,29 @@ const DEFAULT_DATA = {
     title: "30 мая (пятница) · 10:00–18:00",
     start: "10:00",
     blocks: [
-      { dur: 20, type: "Контент",    name: "Слот 1", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 2", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 3", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 4", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 5", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 20, type: "Кофе-брейк", name: "Кофе-брейк № 1", speaker: "", notes: "" },
       { dur: 15, type: "Признание",  name: "Признание № 4", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 6", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 7", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 8", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 9", speaker: "", notes: "" },
-      { dur: 25, type: "Буфер",      name: "Буфер / переход к обеду", speaker: "", notes: "" },
-      { dur: 60, type: "Обед",       name: "Обед", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 10", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 11", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 25, type: "Буфер",      name: "Подход к обеду", speaker: "", notes: "" },
+      { dur: 60, type: "Обед",       name: "Обед", speaker: "", notes: "", fixedStart: "14:00" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 15, type: "Признание",  name: "Признание № 5", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 12", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 13", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 20, type: "Кофе-брейк", name: "Кофе-брейк № 2", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 14", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 15", speaker: "", notes: "" },
-      { dur: 20, type: "Контент",    name: "Слот 16", speaker: "", notes: "" },
+      { dur: 30, type: "Контент",    name: "", speaker: "", notes: "" },
+      { dur: 20, type: "Контент",    name: "", speaker: "", notes: "" },
       { dur: 5,  type: "Закрытие",   name: "Закрытие мероприятия", speaker: "", notes: "" },
     ],
   },
 };
 
-// ────────────────────────────────────────────────────────────────────────
-// Состояние
-// ────────────────────────────────────────────────────────────────────────
-const STORAGE_KEY = "event-timing-29-30-may-v1";
+const STORAGE_KEY = "event-timing-29-30-may-v2";
 let state = loadState();
 
 function loadState() {
@@ -147,28 +137,39 @@ function loadState() {
   } catch (e) {}
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-// ────────────────────────────────────────────────────────────────────────
-// Утилиты времени
-// ────────────────────────────────────────────────────────────────────────
 function timeToMin(t) {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
 }
 function minToTime(min) {
-  min = ((min % (24 * 60)) + 24 * 60) % (24 * 60);
+  min = Math.max(0, Math.round(min));
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-// ────────────────────────────────────────────────────────────────────────
-// Рендер
-// ────────────────────────────────────────────────────────────────────────
+function computeTimings(day) {
+  const startMin = timeToMin(day.start);
+  let cursor = startMin;
+  const out = [];
+  for (const b of day.blocks) {
+    let actualStart, gap = 0, conflict = false;
+    if (b.fixedStart) {
+      const fixed = timeToMin(b.fixedStart);
+      if (cursor > fixed) { conflict = true; actualStart = cursor; }
+      else if (cursor < fixed) { gap = fixed - cursor; actualStart = fixed; }
+      else { actualStart = fixed; }
+    } else {
+      actualStart = cursor;
+    }
+    out.push({ start: actualStart, end: actualStart + b.dur, gap, conflict });
+    cursor = actualStart + b.dur;
+  }
+  return out;
+}
+
 function render() {
   renderDay("day-29", "day29", state.day29);
   renderDay("day-30", "day30", state.day30);
@@ -177,11 +178,8 @@ function render() {
 
 function renderDay(containerId, key, day) {
   const container = document.getElementById(containerId);
-  const startMin = timeToMin(day.start);
-  let cursor = startMin;
-  let totalDur = 0;
+  const timings = computeTimings(day);
 
-  // Шапка
   let html = `
     <div class="px-4 py-3 border-b flex items-start justify-between gap-3">
       <div class="flex-1 min-w-0">
@@ -191,7 +189,7 @@ function renderDay(containerId, key, day) {
         <div class="text-xs text-slate-500 mt-1 flex items-center gap-1">
           Старт:
           <input type="text" inputmode="numeric" pattern="[0-9:]*"
-                 class="row-input col-time mono font-medium"
+                 class="row-input col-time font-mono font-medium"
                  value="${escapeAttr(day.start)}"
                  onchange="updateStart('${key}', this.value)" />
         </div>
@@ -206,19 +204,28 @@ function renderDay(containerId, key, day) {
 
   day.blocks.forEach((b, i) => {
     const t = TYPES[b.type] || TYPES["Контент"];
-    const start = minToTime(cursor);
-    const end = minToTime(cursor + b.dur);
-    cursor += b.dur;
-    totalDur += b.dur;
+    const tm = timings[i];
+    const isFixed = !!b.fixedStart;
+    const pinTitle = isFixed ? `Зафиксировано на ${b.fixedStart} · клик чтобы снять` : `Зафиксировать на ${minToTime(tm.start)}`;
+    const conflictClass = tm.conflict ? "conflict" : "";
+
+    if (tm.gap > 0) {
+      html += `<li class="gap-bar">↓ Пустое время ${tm.gap} мин (можно заполнить добавлением блока)</li>`;
+    }
 
     html += `
-      <li class="row ${t.bg} ${t.border} border-l-4 px-2 py-1.5 flex items-center gap-1 hover:bg-opacity-70 group"
+      <li class="row ${t.bg} ${t.border} ${conflictClass} border-l-4 px-2 py-1.5 flex items-center gap-1 hover:bg-opacity-70 group"
           data-day="${key}" data-idx="${i}">
         <span class="drag-handle text-slate-400 group-hover:text-slate-700 px-1 select-none" title="перетащить">≡</span>
         <span class="col-num">${i + 1}</span>
-        <span class="col-time text-xs font-medium ${t.text} font-mono">${start}</span>
+        <button onclick="togglePin('${key}', ${i})"
+                title="${pinTitle}"
+                class="pin-btn ${isFixed ? 'active' : 'text-slate-300 hover:text-slate-700'} text-base leading-none">
+          📌
+        </button>
+        <span class="col-time text-xs font-medium ${t.text} font-mono ${tm.conflict ? 'text-red-700 font-bold' : ''}">${minToTime(tm.start)}</span>
         <span class="text-slate-300">→</span>
-        <span class="col-time text-xs ${t.text} font-mono">${end}</span>
+        <span class="col-time text-xs ${t.text} font-mono">${minToTime(tm.end)}</span>
         <input type="number" min="1" max="600" step="5"
                class="row-input col-dur font-mono text-xs ${t.text}"
                value="${b.dur}"
@@ -227,13 +234,13 @@ function renderDay(containerId, key, day) {
         <select class="row-input ${t.chip} text-xs font-medium rounded px-2 py-0.5 cursor-pointer"
                 style="width: 112px;"
                 onchange="updateBlock('${key}', ${i}, 'type', this.value)">
-          ${Object.keys(TYPES).map(t => `<option value="${t}" ${t === b.type ? 'selected' : ''}>${t}</option>`).join('')}
+          ${Object.keys(TYPES).map(tn => `<option value="${tn}" ${tn === b.type ? 'selected' : ''}>${tn}</option>`).join('')}
         </select>
         <input class="row-input flex-1 min-w-0 text-sm font-medium ${t.text}"
                value="${escapeAttr(b.name)}"
-               placeholder="название"
+               placeholder="название (пусто = «Слот»)"
                onchange="updateBlock('${key}', ${i}, 'name', this.value)" />
-        <input class="row-input text-xs text-slate-600 hidden sm:block" style="width: 110px;"
+        <input class="row-input text-xs text-slate-600 hidden sm:block" style="width: 100px;"
                value="${escapeAttr(b.speaker || '')}"
                placeholder="спикер"
                onchange="updateBlock('${key}', ${i}, 'speaker', this.value)" />
@@ -253,10 +260,15 @@ function renderDay(containerId, key, day) {
 
   html += `</ul>`;
 
-  // Футер дня
-  const overflow = (startMin + totalDur) > 18 * 60;
-  const fitClass = overflow ? "text-rose-700 font-bold" : "text-emerald-700 font-medium";
-  const endTime = minToTime(startMin + totalDur);
+  const lastTm = timings[timings.length - 1];
+  const endMin = lastTm ? lastTm.end : timeToMin(day.start);
+  const totalDur = day.blocks.reduce((s, b) => s + b.dur, 0);
+  const hasConflict = timings.some(t => t.conflict);
+  const overflow = endMin > 18 * 60;
+  let statusClass, statusText;
+  if (hasConflict) { statusClass = "text-rose-700 font-bold"; statusText = "🔴 конфликт — контент не помещается перед фикс-слотом"; }
+  else if (overflow) { statusClass = "text-rose-700 font-bold"; statusText = "🔴 выходит за 18:00"; }
+  else { statusClass = "text-emerald-700 font-medium"; statusText = "✅ помещается до 18:00"; }
 
   html += `
     <div class="px-4 py-3 border-t flex items-center justify-between text-sm bg-slate-50">
@@ -265,57 +277,60 @@ function renderDay(containerId, key, day) {
         ＋ Добавить блок в конец
       </button>
       <div class="text-right">
-        <div class="text-xs text-slate-500">Итого ${totalDur} мин · финал ${endTime}</div>
-        <div class="${fitClass} text-xs mt-0.5">
-          ${overflow ? "🔴 выходит за 18:00" : "✅ помещается до 18:00"}
-        </div>
+        <div class="text-xs text-slate-500">Итого ${totalDur} мин · финал ${minToTime(endMin)}</div>
+        <div class="${statusClass} text-xs mt-0.5">${statusText}</div>
       </div>
     </div>
   `;
 
   container.innerHTML = html;
 
-  // Включаем drag-n-drop
   Sortable.create(document.getElementById(`${key}-list`), {
     handle: ".drag-handle",
     animation: 160,
     ghostClass: "ghost",
-    onEnd(evt) {
+    filter: ".gap-bar",
+    onEnd() {
+      const list = document.getElementById(`${key}-list`);
+      const rows = Array.from(list.children).filter(el => el.classList.contains("row"));
+      const newOrder = rows.map(el => parseInt(el.dataset.idx, 10));
       const blocks = state[key].blocks;
-      const [moved] = blocks.splice(evt.oldIndex, 1);
-      blocks.splice(evt.newIndex, 0, moved);
+      state[key].blocks = newOrder.map(i => blocks[i]);
       render();
     },
   });
 }
 
-// ────────────────────────────────────────────────────────────────────────
-// Действия
-// ────────────────────────────────────────────────────────────────────────
-function updateBlock(dayKey, idx, field, value) {
-  state[dayKey].blocks[idx][field] = value;
-  render();
-}
-function updateField(dayKey, field, value) {
-  state[dayKey][field] = value;
-  render();
-}
+function updateBlock(dayKey, idx, field, value) { state[dayKey].blocks[idx][field] = value; render(); }
+function updateField(dayKey, field, value) { state[dayKey][field] = value; render(); }
 function updateStart(dayKey, value) {
-  // нормализуем "10:00"
   const v = value.trim().replace(/[^0-9:]/g, "");
   state[dayKey].start = v.includes(":") ? v : (v + ":00");
   render();
 }
+function togglePin(dayKey, idx) {
+  const block = state[dayKey].blocks[idx];
+  if (block.fixedStart) {
+    delete block.fixedStart;
+    toast("Слот разморожен");
+  } else {
+    const timings = computeTimings(state[dayKey]);
+    block.fixedStart = minToTime(timings[idx].start);
+    toast(`Зафиксирован на ${block.fixedStart}`);
+  }
+  render();
+}
 function insertAfter(dayKey, idx) {
   state[dayKey].blocks.splice(idx + 1, 0, {
-    dur: 20, type: "Контент", name: "Новый слот", speaker: "", notes: "",
+    dur: 30, type: "Контент", name: "", speaker: "", notes: "",
   });
   render();
   toast("Блок добавлен");
 }
 function removeBlock(dayKey, idx) {
   const b = state[dayKey].blocks[idx];
-  if (!confirm(`Удалить «${b.name}» (${b.dur} мин)?`)) return;
+  const label = b.name || `${b.type} ${b.dur} мин`;
+  if (!confirm(`Удалить «${label}»?`)) return;
   state[dayKey].blocks.splice(idx, 1);
   render();
   toast("Блок удалён");
@@ -327,9 +342,6 @@ function resetToDefault() {
   toast("Сброшено к исходному");
 }
 
-// ────────────────────────────────────────────────────────────────────────
-// Экспорт
-// ────────────────────────────────────────────────────────────────────────
 function exportJSON() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -339,7 +351,6 @@ function exportJSON() {
   a.click();
   URL.revokeObjectURL(url);
 }
-
 function importJSON(evt) {
   const f = evt.target.files[0];
   if (!f) return;
@@ -358,37 +369,25 @@ function importJSON(evt) {
   r.readAsText(f);
   evt.target.value = "";
 }
-
-function copyMarkdown() {
-  const md = renderMarkdown();
-  navigator.clipboard.writeText(md).then(() => toast("Markdown в буфере"));
-}
-
+function copyMarkdown() { navigator.clipboard.writeText(renderMarkdown()).then(() => toast("Markdown в буфере")); }
 function renderMarkdown() {
   let out = "";
   for (const key of ["day29", "day30"]) {
     const day = state[key];
+    const timings = computeTimings(day);
     out += `## ${day.title}\n\n`;
     out += `| № | Старт | Конец | Длит. | Тип | Название | Спикер |\n`;
     out += `|---|---|---|---|---|---|---|\n`;
-    let cur = timeToMin(day.start);
     day.blocks.forEach((b, i) => {
-      const s = minToTime(cur);
-      const e = minToTime(cur + b.dur);
-      cur += b.dur;
-      out += `| ${i+1} | ${s} | ${e} | ${b.dur} мин | ${b.type} | ${b.name} | ${b.speaker || ''} |\n`;
+      const pin = b.fixedStart ? " 📌" : "";
+      out += `| ${i+1} | ${minToTime(timings[i].start)}${pin} | ${minToTime(timings[i].end)} | ${b.dur} мин | ${b.type} | ${b.name || '—'} | ${b.speaker || ''} |\n`;
     });
     out += "\n";
   }
   return out;
 }
 
-// ────────────────────────────────────────────────────────────────────────
-// Утилиты
-// ────────────────────────────────────────────────────────────────────────
-function escapeAttr(s) {
-  return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
-}
+function escapeAttr(s) { return String(s ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;"); }
 function toast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
@@ -396,13 +395,8 @@ function toast(msg) {
   clearTimeout(window.__toastTimer);
   window.__toastTimer = setTimeout(() => { t.style.opacity = "0"; }, 1500);
 }
-
-// keyboard: Ctrl+S — экспорт
 window.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-    e.preventDefault();
-    exportJSON();
-  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); exportJSON(); }
 });
 
 render();
