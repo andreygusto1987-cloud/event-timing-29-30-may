@@ -202,8 +202,8 @@ const DEFAULT_DATA = {
 };
 
 const STORAGE_KEY = "event-timing-29-30-may-v2";
-const BLOB_ID = "019e5db4-e95d-77ff-8629-e0b03184fe65";
-const BLOB_URL = `https://jsonblob.com/api/jsonBlob/${BLOB_ID}`;
+// CORS-обходка: jsonblob отключил CORS — идём через nginx-прокси на VPS
+const BLOB_URL = "https://a-bonus-club.ru/timing-blob";
 let PUBLISH_TIMER = null;
 
 // ───── Режим: viewonly если в hash есть #view=<base64> ─────

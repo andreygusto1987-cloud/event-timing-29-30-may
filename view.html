@@ -86,8 +86,8 @@ const TYPES = {
   "Закрытие":   { bg: "bg-emerald-100", border: "border-emerald-300", text: "text-emerald-900",  chip: "bg-emerald-200 text-emerald-900" },
 };
 
-const BLOB_ID = "019e5db4-e95d-77ff-8629-e0b03184fe65";
-const BLOB_URL = `https://jsonblob.com/api/jsonBlob/${BLOB_ID}`;
+// CORS-обходка: jsonblob отключил CORS — идём через nginx-прокси на VPS
+const BLOB_URL = "https://a-bonus-club.ru/timing-blob";
 
 let state = null;
 
