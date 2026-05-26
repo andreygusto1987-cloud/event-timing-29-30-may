@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Тарифы · Альфа Бонусклуб</title>
+<meta name="description" content="Сравнение тарифов платформы Альфа Бонусклуб: Бесплатный, Розыгрыши, Старт, Про, Премиум.">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --alfa-red: #ef3124;
+    --alfa-red-deep: #c3261c;
+    --alfa-red-soft: #ff6b5e;
+    --alfa-ink: #07080d;
+    --alfa-ink-2: #0e1019;
+    --alfa-ink-3: #161a28;
+  }
+  html, body { background: var(--alfa-ink); }
+  body { font-family: 'Inter', system-ui, sans-serif; color: #e8e9ed; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+  .gradient-text {
+    background: linear-gradient(135deg, #ef3124 0%, #ff8a3d 50%, #ffd166 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .hero-bg {
+    background:
+      radial-gradient(900px 500px at 20% 20%, rgba(239,49,36,0.22), transparent 60%),
+      radial-gradient(700px 500px at 80% 60%, rgba(255,138,61,0.14), transparent 60%),
+      radial-gradient(600px 300px at 50% 100%, rgba(16,185,129,0.08), transparent 70%),
+      linear-gradient(180deg, #0a0d18 0%, #05060a 100%);
+  }
+  .glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; backdrop-filter: blur(10px); }
+  .glow-red { box-shadow: 0 0 40px -10px rgba(239,49,36,0.50); }
+  .tier-card { position: relative; overflow: hidden; transition: transform .3s ease, box-shadow .3s ease; }
+  .tier-card:hover { transform: translateY(-4px); box-shadow: 0 30px 50px -25px rgba(239,49,36,0.30); }
+  .tier-card.popular {
+    background: linear-gradient(165deg, rgba(239,49,36,0.18) 0%, rgba(239,49,36,0.04) 60%);
+    border-color: rgba(239,49,36,0.55);
+    box-shadow: 0 0 60px -15px rgba(239,49,36,0.45);
+  }
+  .pop-badge {
+    position: absolute; top: -1px; right: 18px;
+    padding: 5px 14px; border-radius: 0 0 12px 12px;
+    background: var(--alfa-red); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .check { color: #34d399; }
+  .nope  { color: rgba(255,255,255,0.18); }
+  .partial { color: #fbbf24; }
+  /* Sticky table header */
+  table.tariff thead th { position: sticky; top: 0; z-index: 5; background: #0e1019; }
+  table.tariff td, table.tariff th { padding: 11px 12px; vertical-align: middle; }
+  table.tariff tbody tr { border-top: 1px solid rgba(255,255,255,0.06); transition: background .15s; }
+  table.tariff tbody tr:hover { background: rgba(255,255,255,0.025); }
+  table.tariff tbody tr.section td {
+    background: rgba(239,49,36,0.07);
+    font-weight: 700;
+    color: #ff8a3d;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 12px 14px;
+  }
+  table.tariff .tier-col { text-align: center; min-width: 86px; font-weight: 700; }
+  table.tariff .tier-col.popular { background: rgba(239,49,36,0.10); }
+  .price-suffix { font-size: 13px; color: rgba(255,255,255,0.45); margin-left: 4px; font-weight: 500; }
+  .pill { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .pill-red { background: rgba(239,49,36,0.18); color: #ff8a8a; border: 1px solid rgba(239,49,36,0.3); }
+  .pill-emerald { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+  .pill-amber { background: rgba(251,191,36,0.15); color: #fde68a; border: 1px solid rgba(251,191,36,0.3); }
+  .pill-slate { background: rgba(148,163,184,0.15); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3); }
+  .btn-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--alfa-red); color: #fff;
+    padding: 12px 22px; border-radius: 14px; font-weight: 700;
+    transition: background .15s, transform .15s, box-shadow .15s;
+    box-shadow: 0 10px 30px -10px rgba(239,49,36,0.6);
+  }
+  .btn-cta:hover { background: var(--alfa-red-deep); transform: translateY(-1px); }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.06); color: #fff;
+    padding: 12px 22px; border-radius: 14px; font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.10);
+    transition: background .15s;
+  }
+  .btn-ghost:hover { background: rgba(255,255,255,0.10); }
+  .pulse-dot { animation: pulseDot 1.5s ease-in-out infinite; }
+  @keyframes pulseDot {
+    0%,100%{ box-shadow:0 0 0 0 rgba(239,49,36,0.7) }
+    50%{ box-shadow:0 0 0 10px rgba(239,49,36,0) }
+  }
+</style>
+</head>
+<body class="min-h-screen">
+
+<!-- HEADER -->
+<header class="border-b border-white/[0.06] sticky top-0 backdrop-blur bg-[#07080d]/85 z-40">
+  <div class="max-w-7xl mx-auto px-5 py-3 flex items-center justify-between gap-4">
+    <a href="https://a-bonus-club.ru/" class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-[#ef3124] flex items-center justify-center font-black text-white text-lg shadow-[0_0_18px_rgba(239,49,36,0.55)]">α</div>
+      <div>
+        <div class="font-bold leading-tight">Альфа Бонусклуб</div>
+        <div class="text-[10px] text-white/45 uppercase tracking-widest">тарифы и возможности</div>
+      </div>
+    </a>
+    <a href="https://a-bonus-club.ru/register" class="btn-cta text-sm hidden sm:inline-flex">Начать бесплатно →</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero-bg relative overflow-hidden">
+  <div class="max-w-7xl mx-auto px-5 py-14 md:py-20 text-center">
+    <div class="inline-flex items-center gap-2 rounded-full border border-[#ef3124]/30 bg-[#ef3124]/[0.08] px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-[#ff8a8a]">
+      <span class="w-1.5 h-1.5 rounded-full bg-[#ef3124] pulse-dot"></span>
+      5 тарифов · одна платформа
+    </div>
+    <h1 class="mt-5 text-4xl md:text-6xl font-black leading-[1.05] tracking-tight">
+      Выбери <span class="gradient-text">свой уровень</span><br>
+      работы с клиентами
+    </h1>
+    <p class="mt-5 text-base md:text-lg text-white/65 max-w-2xl mx-auto leading-relaxed">
+      От бесплатного входа до полного арсенала: CRM, лендинги, аналитика когорт, обучение А10, розыгрыши призов и Telegram-уведомления.
+    </p>
+    <div class="mt-7 flex flex-wrap justify-center gap-3">
+      <a href="https://a-bonus-club.ru/register" class="btn-cta">🚀 Начать бесплатно</a>
+      <a href="#сравнение" class="btn-ghost">Сравнить детально</a>
+    </div>
+  </div>
+</section>
+
+<!-- TIER CARDS -->
+<section class="max-w-7xl mx-auto px-5 py-12">
+  <div class="grid gap-5 lg:grid-cols-5 md:grid-cols-2">
+    <!-- FREE -->
+    <div class="glass tier-card p-6 flex flex-col">
+      <div class="text-xs text-white/45 uppercase tracking-widest">Бесплатный</div>
+      <div class="text-2xl font-bold mt-1">Free</div>
+      <div class="mt-3 text-3xl font-black mono">0 ₽</div>
+      <p class="mt-3 text-sm text-white/55">Регистрация без оплаты — пробуй базовые модули.</p>
+      <ul class="mt-5 space-y-2 text-sm flex-1">
+        <li class="flex gap-2"><span class="check">✓</span> Сводка / Главная</li>
+        <li class="flex gap-2"><span class="check">✓</span> Мои ссылки</li>
+        <li class="flex gap-2"><span class="check">✓</span> Сайт-визитка базовая</li>
+        <li class="flex gap-2"><span class="check">✓</span> Школа А10</li>
+        <li class="flex gap-2"><span class="check">✓</span> Реферальная программа</li>
+      </ul>
+      <a href="https://a-bonus-club.ru/register" class="btn-ghost mt-6 justify-center">Зарегистрироваться</a>
+    </div>
+
+    <!-- RAFFLE -->
+    <div class="glass tier-card p-6 flex flex-col" style="border-color: rgba(168,85,247,0.30); background: linear-gradient(165deg, rgba(168,85,247,0.10), transparent 60%);">
+      <div class="text-xs text-white/45 uppercase tracking-widest">Розыгрыши</div>
+      <div class="text-2xl font-bold mt-1" style="color: #c084fc;">Raffle</div>
+      <div class="mt-3 text-3xl font-black mono">2 999 ₽<span class="price-suffix">/ месяц</span></div>
+      <p class="mt-3 text-sm text-white/55">Только участие в ежемесячных розыгрышах призов.</p>
+      <ul class="mt-5 space-y-2 text-sm flex-1">
+        <li class="flex gap-2"><span class="check">✓</span> Всё из Free</li>
+        <li class="flex gap-2"><span class="check">✓</span> Розыгрыши: iPhone, ТВ, гриль</li>
+        <li class="flex gap-2"><span class="check">✓</span> Карточка клиента: ФИО + ID</li>
+        <li class="flex gap-2"><span class="nope">✕</span> <span class="text-white/35">Канбан, аналитика</span></li>
+      </ul>
+      <a href="https://a-bonus-club.ru/dashboard/billing" class="btn-ghost mt-6 justify-center" style="background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.35);">Купить розыгрыши</a>
+    </div>
+
+    <!-- START -->
+    <div class="glass tier-card p-6 flex flex-col" style="border-color: rgba(56,189,248,0.30); background: linear-gradient(165deg, rgba(56,189,248,0.10), transparent 60%);">
+      <div class="text-xs text-white/45 uppercase tracking-widest">Подписка</div>
+      <div class="text-2xl font-bold mt-1" style="color: #38bdf8;">Старт</div>
+      <div class="mt-3 text-3xl font-black mono">3 000 ₽<span class="price-suffix">/ 90 дней</span></div>
+      <p class="mt-3 text-sm text-white/55">Базовый рабочий комплект для активного партнёра.</p>
+      <ul class="mt-5 space-y-2 text-sm flex-1">
+        <li class="flex gap-2"><span class="check">✓</span> Полная карточка клиента</li>
+        <li class="flex gap-2"><span class="check">✓</span> Канбан + базовая аналитика</li>
+        <li class="flex gap-2"><span class="check">✓</span> Карта продуктов</li>
+        <li class="flex gap-2"><span class="check">✓</span> <strong>1 лендинг</strong></li>
+        <li class="flex gap-2"><span class="check">✓</span> Расширенная сайт-визитка</li>
+      </ul>
+      <a href="https://a-bonus-club.ru/dashboard/billing" class="btn-ghost mt-6 justify-center" style="background: rgba(56,189,248,0.15); border-color: rgba(56,189,248,0.35);">Купить Старт</a>
+    </div>
+
+    <!-- PRO -->
+    <div class="glass tier-card popular p-6 flex flex-col">
+      <div class="pop-badge">Популярный</div>
+      <div class="text-xs uppercase tracking-widest" style="color: #ff8a8a;">Подписка</div>
+      <div class="text-2xl font-bold mt-1">Про</div>
+      <div class="mt-3 text-3xl font-black mono">6 000 ₽<span class="price-suffix">/ 90 дней</span></div>
+      <p class="mt-3 text-sm text-white/65">Полный арсенал — лендинги, secret-tool, нотификации.</p>
+      <ul class="mt-5 space-y-2 text-sm flex-1">
+        <li class="flex gap-2"><span class="check">✓</span> Всё из «Старт»</li>
+        <li class="flex gap-2"><span class="check">✓</span> <strong>10 лендингов</strong> + premium-шаблоны</li>
+        <li class="flex gap-2"><span class="check">✓</span> Секретный инструмент</li>
+        <li class="flex gap-2"><span class="check">✓</span> Telegram-уведомления</li>
+        <li class="flex gap-2"><span class="check">✓</span> Premium-шаблоны визитки</li>
+      </ul>
+      <a href="https://a-bonus-club.ru/dashboard/billing" class="btn-cta mt-6 justify-center">Купить Про</a>
+    </div>
+
+    <!-- PREMIUM -->
+    <div class="glass tier-card p-6 flex flex-col" style="border-color: rgba(52,211,153,0.40); background: linear-gradient(165deg, rgba(52,211,153,0.12), transparent 60%);">
+      <div class="text-xs text-white/45 uppercase tracking-widest">Подписка</div>
+      <div class="text-2xl font-bold mt-1" style="color: #34d399;">Премиум</div>
+      <div class="mt-3 text-3xl font-black mono">9 000 ₽<span class="price-suffix">/ 90 дней</span></div>
+      <p class="mt-3 text-sm text-white/55">Всё включено + интеграции, материалы, когорты.</p>
+      <ul class="mt-5 space-y-2 text-sm flex-1">
+        <li class="flex gap-2"><span class="check">✓</span> Всё из «Про»</li>
+        <li class="flex gap-2"><span class="check">✓</span> <strong>30 лендингов</strong></li>
+        <li class="flex gap-2"><span class="check">✓</span> Аналитика когорт + воронок</li>
+        <li class="flex gap-2"><span class="check">✓</span> Обучающие материалы</li>
+        <li class="flex gap-2"><span class="check">✓</span> Интеграции TG / VK / IG</li>
+      </ul>
+      <a href="https://a-bonus-club.ru/dashboard/billing" class="btn-cta mt-6 justify-center" style="background:#10b981; box-shadow: 0 10px 30px -10px rgba(16,185,129,0.6);">Купить Премиум</a>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section id="сравнение" class="max-w-7xl mx-auto px-5 py-10">
+  <div class="text-center mb-8">
+    <h2 class="text-3xl md:text-4xl font-black tracking-tight">Полное <span class="gradient-text">сравнение функций</span></h2>
+    <p class="mt-3 text-white/55 max-w-xl mx-auto">Каждый столбец — тариф. Зелёный ✓ — функция доступна. Старший тариф включает всё из младшего.</p>
+  </div>
+
+  <div class="glass overflow-x-auto">
+    <table class="tariff w-full text-sm" style="min-width: 720px;">
+      <thead>
+        <tr class="text-xs uppercase tracking-widest text-white/45 border-b border-white/10">
+          <th class="text-left px-4 py-3 font-semibold">Функция</th>
+          <th class="tier-col px-3 py-3">Free</th>
+          <th class="tier-col px-3 py-3" style="color:#c084fc;">Raffle</th>
+          <th class="tier-col px-3 py-3" style="color:#38bdf8;">Старт</th>
+          <th class="tier-col popular px-3 py-3" style="color:#ff8a8a;">Про</th>
+          <th class="tier-col px-3 py-3" style="color:#34d399;">Премиум</th>
+        </tr>
+        <tr class="text-xs text-white/40">
+          <td class="px-4 py-2 font-semibold">Цена</td>
+          <td class="tier-col mono py-2">0 ₽</td>
+          <td class="tier-col mono py-2">2 999 ₽<br><span class="text-[10px] text-white/35">/мес</span></td>
+          <td class="tier-col mono py-2">3 000 ₽<br><span class="text-[10px] text-white/35">/90 дн</span></td>
+          <td class="tier-col popular mono py-2">6 000 ₽<br><span class="text-[10px] text-white/35">/90 дн</span></td>
+          <td class="tier-col mono py-2">9 000 ₽<br><span class="text-[10px] text-white/35">/90 дн</span></td>
+        </tr>
+      </thead>
+      <tbody id="t-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="max-w-7xl mx-auto px-5 py-14">
+  <div class="glass p-8 md:p-12 text-center glow-red" style="background: linear-gradient(135deg, rgba(239,49,36,0.18), rgba(168,85,247,0.10));">
+    <h2 class="text-3xl md:text-4xl font-black">Не уверен — какой тариф взять?</h2>
+    <p class="mt-3 text-white/70 max-w-xl mx-auto">Зарегистрируйся бесплатно, посмотри платформу изнутри. Тариф можно сменить в любой момент.</p>
+    <div class="mt-6 flex flex-wrap justify-center gap-3">
+      <a href="https://a-bonus-club.ru/register" class="btn-cta">🚀 Зарегистрироваться</a>
+      <a href="https://a-bonus-club.ru/login" class="btn-ghost">Войти в кабинет</a>
+    </div>
+  </div>
+</section>
+
+<footer class="max-w-7xl mx-auto px-5 py-8 text-xs text-white/35 border-t border-white/[0.06]">
+  © Альфа Бонусклуб · <a class="hover:text-white/60" href="https://a-bonus-club.ru/offer">Оферта</a> · <a class="hover:text-white/60" href="https://a-bonus-club.ru/privacy">Политика</a>
+</footer>
+
+<script>
+// Матрица фич — единственный источник истины, синхронизирован с backend/api/v1/subscriptions.py:_features_for_tier
+const ROWS = [
+  { section: '🎯 Кабинет (общее)' },
+  { name: 'Сводка / Главная',            v: [1,1,1,1,1] },
+  { name: 'Мои ссылки',                  v: [1,1,1,1,1] },
+  { name: 'Пригласить (рефералка)',      v: [1,1,1,1,1] },
+  { name: 'Рейтинг',                     v: [1,1,1,1,1] },
+  { name: 'Подписка и оплата',           v: [1,1,1,1,1] },
+
+  { section: '🎓 Обучение' },
+  { name: 'Школа А10 — полный курс',     v: [1,1,1,1,1] },
+  { name: 'Материалы партнёра',          v: [0,0,0,0,1] },
+
+  { section: '🌐 Привлечение клиентов' },
+  { name: 'Сайт-визитка базовая',        v: [1,1,1,1,1] },
+  { name: 'Сайт-визитка расширенная',    v: [0,0,1,1,1] },
+  { name: 'Premium-шаблоны визитки',     v: [0,0,0,1,1] },
+  { name: 'Карта продуктов',             v: [0,0,1,1,1] },
+  { name: 'Лендинги под партнёра',       v: ['—','—','1 шт','10 шт','30 шт'] },
+  { name: 'Premium-шаблоны лендингов',   v: [0,0,0,1,1] },
+  { name: 'Розыгрыши призов (iPhone, ТВ)', v: [0,1,1,1,1] },
+  { name: 'Секретный инструмент',        v: [0,0,0,1,1] },
+
+  { section: '👥 Работа с клиентами (CRM)' },
+  { name: 'Карточка клиента: ФИО + ID',  v: [0,1,1,1,1] },
+  { name: 'Карточка клиента: все поля',  v: [0,0,1,1,1] },
+  { name: 'Канбан-доска',                v: [0,0,1,1,1] },
+  { name: 'Базовая аналитика',           v: [0,0,1,1,1] },
+  { name: 'Когорты + воронки',           v: [0,0,0,0,1] },
+
+  { section: '🔔 Уведомления и каналы' },
+  { name: 'Telegram-уведомления',        v: [0,0,0,1,1] },
+  { name: 'Интеграции TG / VK / Instagram', v: [0,0,0,0,1] },
+];
+
+const tbody = document.getElementById('t-body');
+const html = ROWS.map(r => {
+  if (r.section) {
+    return `<tr class="section"><td colspan="6">${r.section}</td></tr>`;
+  }
+  const cells = r.v.map((cell, i) => {
+    const popular = i === 3 ? 'popular' : '';
+    let content;
+    if (cell === 1) content = '<span class="check text-base">✓</span>';
+    else if (cell === 0) content = '<span class="nope text-base">✕</span>';
+    else if (cell === '—') content = '<span class="nope text-xs">—</span>';
+    else content = `<span class="pill pill-emerald">${cell}</span>`;
+    return `<td class="tier-col ${popular}">${content}</td>`;
+  }).join('');
+  return `<tr><td class="px-4 text-white/80">${r.name}</td>${cells}</tr>`;
+}).join('');
+tbody.innerHTML = html;
+</script>
+
+</body>
+</html>
